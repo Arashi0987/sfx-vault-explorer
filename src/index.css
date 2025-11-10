@@ -95,3 +95,28 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+[draggable="true"] {
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+[draggable="true"]:active {
+  cursor: grabbing;
+  opacity: 0.6;
+  transform: scale(0.98);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+[draggable="true"]:hover {
+  transform: translateY(-1px);
+  transition: transform 0.2s ease;
+}
+
+/* Prevent text selection and interaction during drag */
+[draggable="true"]:active * {
+  pointer-events: none;
+}

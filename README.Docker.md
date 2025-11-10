@@ -76,7 +76,7 @@ Create a `.env` file in the project root to customize:
 
 ```env
 # Frontend
-VITE_API_URL=http://localhost:5000
+VITE_API_URL=http://fox.home:5000
 
 # Backend
 FLASK_ENV=production

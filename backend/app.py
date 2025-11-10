@@ -1,5 +1,5 @@
 import os
-from flask import Flask, jsonify, request, abort
+from flask import Flask, jsonify, request, abort, send_file
 from flask_cors import CORS
 from models import db, SFX, Tag
 from scanner import scan_and_sync
@@ -16,14 +16,24 @@ SCAN_INTERVAL_SECONDS = int(os.environ.get("SCAN_INTERVAL_SECONDS", "60"))
 def create_app():
     app = Flask(__name__)
     
-    # Enable CORS for all routes and origins
-    CORS(app, resources={
-        r"/api/*": {
-            "origins": "*",
-            "methods": ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization", "Content-Disposition", "Content-Length"]
-        }
-    })
+    # Enable CORS with more permissive settings
+    CORS(app, 
+         resources={r"/api/*": {"origins": "*"}},
+         supports_credentials=True,
+         allow_headers=["Content-Type", "Authorization", "Content-Disposition", "Content-Length"],
+         expose_headers=["Content-Disposition", "Content-Type", "Content-Length"],
+         methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"]
+    )
+    
+    # Additional CORS headers middleware
+    @app.after_request
+    def after_request(response):
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,Content-Disposition,Content-Length')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS')
+        response.headers.add('Access-Control-Expose-Headers', 'Content-Disposition,Content-Type,Content-Length')
+        return response
+    
     
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
@@ -116,68 +126,66 @@ def create_app():
         scan_and_sync(app, ROOT_MOUNT)
         return jsonify({"status": "scanned"})
 
+    @app.route('/api/audio/<int:sfx_id>')
+    def serve_audio(sfx_id):
+        """
+        Serve audio files with proper headers for drag-and-drop support
+        """
+        s = SFX.query.get_or_404(sfx_id)
+        file_path = Path(s.filepath)
+
+        if not file_path.exists():
+            return {"error": "File not found"}, 404
+
+        # Determine MIME type based on extension
+        extension = file_path.suffix.lower()
+        mime_types = {
+            '.wav': 'audio/wav',
+            '.mp3': 'audio/mpeg',
+            '.ogg': 'audio/ogg',
+            '.flac': 'audio/flac',
+            '.m4a': 'audio/mp4',
+            '.aac': 'audio/aac',
+        }
+        mime_type = mime_types.get(extension, 'audio/mpeg')
+
+        # Send file with proper headers
+        return send_file(
+            file_path,
+            mimetype=mime_type,
+            as_attachment=False,  # Set to True if you want force download
+            download_name=s.filename
+        )
+
+    @app.route('/api/audio/<int:sfx_id>/download')
+    def download_audio(sfx_id):
+        """
+        Alternative endpoint for forced download
+        """
+        s = SFX.query.get_or_404(sfx_id)
+        file_path = Path(s.filepath)
+
+        if not file_path.exists():
+            return {"error": "File not found"}, 404
+
+        extension = file_path.suffix.lower()
+        mime_types = {
+            '.wav': 'audio/wav',
+            '.mp3': 'audio/mpeg',
+            '.ogg': 'audio/ogg',
+            '.flac': 'audio/flac',
+            '.m4a': 'audio/mp4',
+            '.aac': 'audio/aac',
+        }
+        mime_type = mime_types.get(extension, 'audio/mpeg')
+
+        return send_file(
+            file_path,
+            mimetype=mime_type,
+            as_attachment=True,
+            download_name=s.filename
+        )    
     return app
-
-@app.route('/api/audio/<int:sfx_id>')
-def serve_audio(filename):
-    """
-    Serve audio files with proper headers for drag-and-drop support
-    """
-    s = SFX.query.get_or_404(sfx_id)
-    file_path = Path(s.filepath)
-    
-    if not file_path.exists():
-        return {"error": "File not found"}, 404
-    
-    # Determine MIME type based on extension
-    extension = file_path.suffix.lower()
-    mime_types = {
-        '.wav': 'audio/wav',
-        '.mp3': 'audio/mpeg',
-        '.ogg': 'audio/ogg',
-        '.flac': 'audio/flac',
-        '.m4a': 'audio/mp4',
-        '.aac': 'audio/aac',
-    }
-    mime_type = mime_types.get(extension, 'audio/mpeg')
-    
-    # Send file with proper headers
-    return send_file(
-        file_path,
-        mimetype=mime_type,
-        as_attachment=False,  # Set to True if you want force download
-        download_name=filename
-    )
-
-@app.route('/api/audio/<int:sfx_id>/download')
-def download_audio(filename):
-    """
-    Alternative endpoint for forced download
-    """
-    s = SFX.query.get_or_404(sfx_id)
-    file_path = Path(s.filepath)
-    
-    if not file_path.exists():
-        return {"error": "File not found"}, 404
-    
-    extension = file_path.suffix.lower()
-    mime_types = {
-        '.wav': 'audio/wav',
-        '.mp3': 'audio/mpeg',
-        '.ogg': 'audio/ogg',
-        '.flac': 'audio/flac',
-        '.m4a': 'audio/mp4',
-        '.aac': 'audio/aac',
-    }
-    mime_type = mime_types.get(extension, 'audio/mpeg')
-    
-    return send_file(
-        file_path,
-        mimetype=mime_type,
-        as_attachment=True,
-        download_name=filename
-    )    
-
 
 if __name__ == "__main__":
     app = create_app()
@@ -192,4 +200,4 @@ if __name__ == "__main__":
     scan_and_sync(app, ROOT_MOUNT)
 
     # run Flask
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "5000")))
+    app.run(host="0.0.0.0", debug=True, port=int(os.environ.get("PORT", "5000")))

@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'http://fox.home:5000';
 
 export interface SFXFile {
   id: number;

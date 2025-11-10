@@ -1,7 +1,7 @@
 services:
   # Frontend service
   frontend:
-    image: sfx_frontend
+    image: sfx_frontend:latest
     build:
       context: .
       dockerfile: Dockerfile
