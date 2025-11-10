@@ -1,0 +1,21 @@
+# docker-compose.yml
+version: "3.8"
+services:
+  sfx-indexer:
+    build: .
+    container_name: sfx-indexer
+    restart: unless-stopped
+    environment:
+      - VA_ROOT=/data/VA_Videos
+      - DB_PATH=/app/data/sfx.db
+      - SCAN_INTERVAL_SECONDS=60
+      - PORT=5000
+    ports:
+      - "5000:5000"
+    volumes:
+      # Persist DB and app data locally
+      - ./data:/app/data
+      # IMPORTANT: change the host path on the left to your real VA Videos path, e.g. "/home/you/VA Videos"
+      # You can use an absolute host path. Example: "/home/arashi/VA Videos:/data/VA_Videos"
+      - "/Media/Videos /VA Videos:/data/VA_Videos"
+    # If you want the container to be able to write tags/notes to files (not necessary), remove :ro
