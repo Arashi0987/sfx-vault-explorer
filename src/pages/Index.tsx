@@ -28,7 +28,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [selectedProject, setSelectedProject] = useState<string>("");
+  const [selectedProject, setSelectedProject] = useState<string>("all");
   const [selectedFile, setSelectedFile] = useState<SFXFile | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
@@ -38,7 +38,7 @@ const Index = () => {
     queryFn: () => api.getFiles({
       q: searchQuery || undefined,
       tags: selectedTags.length > 0 ? selectedTags : undefined,
-      project: selectedProject || undefined,
+      project: selectedProject && selectedProject !== 'all' ? selectedProject : undefined,
     }),
     refetchInterval: 30000, // Refetch every 30 seconds
   });
@@ -75,10 +75,10 @@ const Index = () => {
   const clearFilters = () => {
     setSearchQuery("");
     setSelectedTags([]);
-    setSelectedProject("");
+    setSelectedProject("all");
   };
 
-  const hasActiveFilters = searchQuery || selectedTags.length > 0 || selectedProject;
+  const hasActiveFilters = searchQuery || selectedTags.length > 0 || (selectedProject && selectedProject !== 'all');
 
   return (
     <div className="min-h-screen bg-background">
@@ -148,7 +148,7 @@ const Index = () => {
                   <SelectValue placeholder="All Projects" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Projects</SelectItem>
+                  <SelectItem value="all">All Projects</SelectItem>
                   {allProjects.map(project => (
                     <SelectItem key={project} value={project}>
                       {project}
