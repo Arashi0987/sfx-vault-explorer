@@ -4,6 +4,7 @@ export interface SFXFile {
   id: number;
   filename: string;
   filepath: string;
+  winpath: string;
   duration_seconds: number;
   length: string;
   tags: string[];

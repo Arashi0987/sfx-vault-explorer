@@ -4,7 +4,7 @@ import hashlib
 from mutagen import File as MutagenFile
 from models import db, SFX, Tag
 from sqlalchemy import select
-from pathlib import Path
+from pathlib import Path, PureWindowsPath, PurePosixPath
 
 AUDIO_EXTS = {".wav", ".mp3", ".flac", ".aiff", ".aif", ".m4a", ".ogg", ".opus"}
 
@@ -84,9 +84,12 @@ def scan_and_sync(app, root_mount: str):
                         checksum = None
                     duration = get_duration_seconds(path)
                     project = extract_project_from_path(root_mount, path)
+                    file_path = os.path.abspath(path)
+                    windows_path = str(PureWindowsPath(PurePosixPath(str(path)))).replace('\\data\\VA_Videos','M:\\Videos\\VA Videos')
                     sfx = SFX(
                         filename=fname,
                         filepath=os.path.abspath(path),
+                        winpath = windows_path,
                         duration=duration,
                         checksum=checksum,
                         mtime=mtime,

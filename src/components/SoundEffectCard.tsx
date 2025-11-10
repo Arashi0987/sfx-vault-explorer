@@ -1,5 +1,6 @@
 import React from 'react';
 import type { SFXFile } from "@/lib/api";
+import { useOperatingSystem } from "@/hooks/useOperatingSystem";
 
 interface SoundEffectCardProps {
   sound: SFXFile;
@@ -13,39 +14,33 @@ const SoundEffectCard: React.FC<SoundEffectCardProps> = ({
   className = '' 
 }) => {
   const [isDragging, setIsDragging] = React.useState(false);
-  const [fileBlob, setFileBlob] = React.useState<Blob | null>(null);
-  const dragTimeoutRef = React.useRef<NodeJS.Timeout>();
-
-  // Pre-fetch file when user hovers over the card
-  const handleMouseEnter = async () => {
-    // Only fetch if we haven't already
-    if (fileBlob) return;
-    
-    // Use a small delay to avoid fetching on quick mouse movements
-    dragTimeoutRef.current = setTimeout(async () => {
-      try {
-        const fileUrl = `http://fox.home:5000/api/audio/${sound.id}`;
-        const response = await fetch(fileUrl);
-        const blob = await response.blob();
-        setFileBlob(blob);
-        console.log('Pre-fetched:', sound.filename);
-      } catch (error) {
-        console.error('Error pre-fetching file:', error);
-      }
-    }, 300); // 300ms delay
-  };
-
-  const handleMouseLeave = () => {
-    // Cancel pre-fetch if user moves away quickly
-    if (dragTimeoutRef.current) {
-      clearTimeout(dragTimeoutRef.current);
-    }
-  };
+  const { os } = useOperatingSystem();
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
     setIsDragging(true);
     
-    const fileUrl = `http://fox:5000/api/audio/${sound.id}`;
+    // Choose the correct file path based on OS
+    let filePath: string;
+    if (os === 'windows') {
+      filePath = sound.winpath;
+    } else {
+      // Mac and Linux both use Unix-style paths
+      filePath = sound.filepath;
+    }
+    
+    // Convert to file:// URI format
+    let fileUri = '';
+    if (filePath.startsWith('\\\\') || filePath.startsWith('//')) {
+      // Windows UNC path: \\server\share\path
+      // Convert to file://server/share/path
+      fileUri = 'file:' + filePath.replace(/\\/g, '/');
+    } else if (filePath.startsWith('/')) {
+      // Unix path: /mnt/nas/path
+      fileUri = 'file://' + filePath;
+    } else {
+      // Fallback to HTTP if no valid file path
+      fileUri = `http://localhost:5000/api/audio/${sound.id}`;
+    }
     
     // Determine MIME type
     const extension = sound.filename.split('.').pop()?.toLowerCase() || '';
@@ -61,39 +56,48 @@ const SoundEffectCard: React.FC<SoundEffectCardProps> = ({
     };
     const mimeType = mimeTypes[extension] || 'audio/mpeg';
     
-    // If we have the pre-fetched blob, use it
-    if (fileBlob) {
-      const file = new File([fileBlob], sound.filename, { type: mimeType });
-      e.dataTransfer.effectAllowed = 'copy';
-      e.dataTransfer.items.add(file);
-      console.log('Dragging cached file:', sound.filename);
-    }
+    // Set drag data with file path
+    e.dataTransfer.effectAllowed = 'copy';
     
-    // Always set URL formats as fallback
-    const downloadUrl = `${mimeType}:${sound.filename}:${fileUrl}`;
+    // Use file:// URI directly - this is what makes it work like File Explorer!
+    e.dataTransfer.setData('text/uri-list', fileUri);
+    e.dataTransfer.setData('text/plain', fileUri);
+    
+    // Also set DownloadURL as fallback
+    const downloadUrl = `${mimeType}:${sound.filename}:${fileUri}`;
     e.dataTransfer.setData('DownloadURL', downloadUrl);
-    e.dataTransfer.setData('text/plain', fileUrl);
-    e.dataTransfer.setData('text/uri-list', fileUrl);
+    
+    // Set a custom drag image
+    const dragImage = document.createElement('div');
+    dragImage.style.cssText = `
+      position: absolute;
+      top: -1000px;
+      padding: 8px 12px;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      border-radius: 4px;
+      font-size: 14px;
+      pointer-events: none;
+      white-space: nowrap;
+    `;
+    dragImage.textContent = `🔊 ${sound.filename}`;
+    document.body.appendChild(dragImage);
+    e.dataTransfer.setDragImage(dragImage, 0, 0);
+    
+    setTimeout(() => dragImage.remove(), 0);
+    
+    console.log('OS:', os);
+    console.log('Using file path:', filePath);
+    console.log('File URI:', fileUri);
   };
 
   const handleDragEnd = () => {
     setIsDragging(false);
   };
 
-  // Cleanup on unmount
-  React.useEffect(() => {
-    return () => {
-      if (dragTimeoutRef.current) {
-        clearTimeout(dragTimeoutRef.current);
-      }
-    };
-  }, []);
-
   return (
     <div
       draggable="true"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       className={`cursor-grab active:cursor-grabbing transition-opacity ${isDragging ? 'opacity-50' : ''} ${className}`}

@@ -16,6 +16,7 @@ class SFX(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String, nullable=False)
     filepath = db.Column(db.String, unique=True, nullable=False, index=True)  # absolute
+    winpath = db.Column(db.String, unique=True, nullable=False, index=True)  # absolute
     duration = db.Column(db.Integer, nullable=True)  # seconds
     notes = db.Column(db.Text, nullable=True)
     checksum = db.Column(db.String(64), nullable=True)  # sha1 hex
@@ -38,6 +39,7 @@ class SFX(db.Model):
             "id": self.id,
             "filename": self.filename,
             "filepath": self.filepath,
+            "winpath": self.filepath,
             "duration_seconds": self.duration,
             "length": self.length_mmss(),
             "tags": [t.name for t in self.tags],

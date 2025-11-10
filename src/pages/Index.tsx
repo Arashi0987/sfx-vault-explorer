@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { OSToggle } from "@/components/OSToggle";
 import { 
   Search, 
   RefreshCw, 
@@ -98,6 +99,7 @@ const Index = () => {
               </div>
             </div>
             
+            <OSToggle />
             <Button 
               onClick={handleScan}
               disabled={isScanning}
