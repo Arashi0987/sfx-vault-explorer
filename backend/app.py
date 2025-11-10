@@ -185,6 +185,18 @@ def create_app():
             as_attachment=True,
             download_name=s.filename
         )    
+    @app.route("/api/sfx/<int:file_id>/play")
+    def play_audio(file_id):
+        sfx = SFX.query.get(file_id)
+        if not sfx:
+            abort(404, "Sound not found")
+
+        filepath = sfx.filepath
+        if not os.path.exists(filepath):
+            abort(404, "File missing on disk")
+
+        # Flask will automatically set correct MIME type based on extension
+        return send_file(filepath, as_attachment=False)
     return app
 
 if __name__ == "__main__":

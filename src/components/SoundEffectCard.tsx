@@ -17,6 +17,12 @@ const SoundEffectCard: React.FC<SoundEffectCardProps> = ({
   const { os } = useOperatingSystem();
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('button')) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
     setIsDragging(true);
     
     // Choose the correct file path based on OS
