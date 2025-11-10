@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # Frontend service
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sfx-library-frontend
+    ports:
+      - "3000:80"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    depends_on:
+      - backend
+    networks:
+      - sfx-network
+
+  # Backend service (example - adjust to your Flask setup)
+  backend:
+    # If you have a Dockerfile for your Flask backend, use:
+    # build:
+    #   context: ./path-to-backend
+    #   dockerfile: Dockerfile
+    
+    # Or use a pre-built image:
+    image: python:3.11-slim
+    container_name: sfx-library-backend
+    working_dir: /app
+    volumes:
+      # Mount your Flask backend code
+      - ./backend:/app
+      # Mount your audio files directory
+      - /data/VA_Videos:/data/VA_Videos:ro
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=production
+      - DATABASE_PATH=/app/sfx_database.db
+    command: >
+      bash -c "pip install flask flask-cors sqlalchemy &&
+               python -m flask run --host=0.0.0.0 --port=5000"
+    restart: unless-stopped
+    networks:
+      - sfx-network
+
+networks:
+  sfx-network:
+    driver: bridge
+
+volumes:
+  sfx-data:
+    driver: local
