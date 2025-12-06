@@ -39,7 +39,7 @@ class SFX(db.Model):
             "id": self.id,
             "filename": self.filename,
             "filepath": self.filepath,
-            "winpath": self.filepath,
+            "winpath": self.winpath,
             "duration_seconds": self.duration,
             "length": self.length_mmss(),
             "tags": [t.name for t in self.tags],
