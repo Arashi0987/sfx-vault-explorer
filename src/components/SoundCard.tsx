@@ -49,15 +49,8 @@ export function SoundCard({ file, onClick }: SoundCardProps) {
   const handlePause = () => setIsPlaying(false);
   const handlePlayEvent = () => setIsPlaying(true);
 
-  // Construct playable URL.
-  // Assumes backend serves /media/<relative_path>
-  // Convert absolute path like /data/VA_Videos/Project/sfx/file.wav → Project/sfx/file.wav
-  const relativePath = file.filepath.replace(/^.*VA_Videos[\\/]/, "");
-  const audioUrl = `${import.meta.env.VITE_API_BASE_URL}/media/${encodeURIComponent(relativePath)}`;
-
-  // Determine MIME type
-  const ext = file.filename.split(".").pop()?.toLowerCase() ?? "";
-  const mimeType = SUPPORTED_AUDIO_TYPES[ext];
+  // Use the backend API endpoint for audio playback
+  const audioUrl = `http://fox.home:5000/api/audio/${file.id}`;
 
   return (
     //<SoundEffectCard sound={file}>
@@ -125,7 +118,6 @@ export function SoundCard({ file, onClick }: SoundCardProps) {
         <audio
           ref={audioRef}
           src={audioUrl}
-          type={mimeType}
           onEnded={handleEnded}
           onPause={handlePause}
           onPlay={handlePlayEvent}
