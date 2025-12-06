@@ -1,11 +1,14 @@
 import os
-from flask import Flask, jsonify, request, abort, send_file
+import io
+import mimetypes
+from pathlib import Path
 from flask_cors import CORS
+from pydub import AudioSegment
+from dotenv import load_dotenv
 from models import db, SFX, Tag
 from scanner import scan_and_sync
+from flask import Flask, jsonify, request, abort, send_file
 from apscheduler.schedulers.background import BackgroundScheduler
-from dotenv import load_dotenv
-from pathlib import Path
 
 load_dotenv()
 
@@ -17,13 +20,13 @@ def create_app():
     app = Flask(__name__)
     
     # Enable CORS with more permissive settings
-    CORS(app, 
-         resources={r"/api/*": {"origins": "*"}},
-         supports_credentials=True,
-         allow_headers=["Content-Type", "Authorization", "Content-Disposition", "Content-Length"],
-         expose_headers=["Content-Disposition", "Content-Type", "Content-Length"],
-         methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"]
-    )
+    #CORS(app, 
+    #     resources={r"/api/*": {"origins": "*"}},
+    #     supports_credentials=True,
+    #     allow_headers=["Content-Type", "Authorization", "Content-Disposition", "Content-Length"],
+    #     expose_headers=["Content-Disposition", "Content-Type", "Content-Length"],
+    #     methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"]
+    #)
     
     # Additional CORS headers middleware
     @app.after_request
@@ -190,13 +193,20 @@ def create_app():
         sfx = SFX.query.get(file_id)
         if not sfx:
             abort(404, "Sound not found")
-
+        
         filepath = sfx.filepath
         if not os.path.exists(filepath):
             abort(404, "File missing on disk")
-
-        # Flask will automatically set correct MIME type based on extension
-        return send_file(filepath, as_attachment=False)
+        
+        # Explicitly set the mimetype
+        mimetype = mimetypes.guess_type(filepath)[0] or 'audio/mpeg'
+        
+        return send_file(
+            filepath,
+            mimetype=mimetype,
+            as_attachment=False,
+            conditional=True  # Enable range requests for seeking
+        )
     return app
 
 if __name__ == "__main__":

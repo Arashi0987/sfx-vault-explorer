@@ -50,7 +50,7 @@ export function SoundCard({ file, onClick }: SoundCardProps) {
   const handlePlayEvent = () => setIsPlaying(true);
 
   // Use the backend API endpoint for audio playback
-  const audioUrl = `http://fox.home:5000/api/audio/${file.id}`;
+  const audioUrl = `/api/sfx/${file.id}/play`;
 
   return (
     //<SoundEffectCard sound={file}>
@@ -70,13 +70,13 @@ export function SoundCard({ file, onClick }: SoundCardProps) {
               size="icon"
               variant="ghost"
               className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={(e) => {
-                e.stopPropagation();
-                const audio = new Audio(`/api/sfx/${file.id}/play`);
-                audio.play();
-              }}
+              onClick={handlePlay}  // Use the existing handler instead
             >
-              <PlayCircle className="h-5 w-5" />
+              {isPlaying ? (
+                <PauseCircle className="h-5 w-5" />
+              ) : (
+                <PlayCircle className="h-5 w-5" />
+              )}
             </Button>
           </div>
         </CardHeader>

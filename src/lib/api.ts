@@ -29,20 +29,20 @@ export const api = {
     if (params?.tags?.length) queryParams.set('tags', params.tags.join(','));
     if (params?.project) queryParams.set('project', params.project);
     
-    const url = `${API_BASE_URL}/api/files${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const url = `/api/files${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     const response = await fetch(url);
     if (!response.ok) throw new Error('Failed to fetch files');
     return response.json();
   },
 
   async getFile(id: number): Promise<SFXFile> {
-    const response = await fetch(`${API_BASE_URL}/api/files/${id}`);
+    const response = await fetch(`/api/files/${id}`);
     if (!response.ok) throw new Error('Failed to fetch file');
     return response.json();
   },
 
   async updateNotes(id: number, notes: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/api/files/${id}/notes`, {
+    const response = await fetch(`/api/files/${id}/notes`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ notes }),
@@ -51,7 +51,7 @@ export const api = {
   },
 
   async addTags(id: number, tags: string[]): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/api/files/${id}/tags`, {
+    const response = await fetch(`/api/files/${id}/tags`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tags }),
@@ -60,7 +60,7 @@ export const api = {
   },
 
   async removeTags(id: number, tags: string[]): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/api/files/${id}/tags`, {
+    const response = await fetch(`/api/files/${id}/tags`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tags }),
@@ -69,7 +69,7 @@ export const api = {
   },
 
   async scanNow(): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/api/scan_now`, {
+    const response = await fetch(`/api/scan_now`, {
       method: 'POST',
     });
     if (!response.ok) throw new Error('Failed to trigger scan');
